@@ -47,4 +47,11 @@ public class Ticket {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate(){
+        if (this.status == null) this.status = "OPEN";
+        if (this.priority == null) this.priority = "PENDING_AI";
+        if (this.category == null) this.category = "UNASSIGNED";
+    }
 }
