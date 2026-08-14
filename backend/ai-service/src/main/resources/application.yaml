@@ -5,9 +5,13 @@ spring:
   application:
     name: ai-service
   ai:
+    # Explicitly enable the chat model
+    model:
+      chat: google-genai
     google:
       genai:
         api-key: ${GEMINI_API_KEY}
         chat:
           options:
-            model: gemini-1.5-flash
+            # Update to the latest supported model
+            model: gemini-2.5-flash
