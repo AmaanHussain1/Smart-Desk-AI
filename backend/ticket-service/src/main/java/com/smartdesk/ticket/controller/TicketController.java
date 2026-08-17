@@ -40,6 +40,6 @@ public class TicketController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTicket(@PathVariable Long id){
         ticketService.deleteTicket(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.noContent().build();  
     }
 }
