@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import type { Ticket } from "./types/Ticket";
+import { Trash2, CheckCircle, RefreshCcw } from "lucide-react";
 
 function App() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -35,6 +36,39 @@ function App() {
       console.error("Error creating ticket:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // DELETE FUNCTION
+  const handleDelete = async (id: number | undefined) => {
+    if (!id) return;
+
+    // Ask for confirmation before deleting
+    if (!window.confirm("Are you sure you want to delete this ticket?")) return;
+
+    try {
+      await axios.delete(`http://localhost:8080/api/tickets/${id}`);
+      fetchTickets(); // Refresh the list after deleting
+    } catch (error) {
+      console.error("Error deleting ticket:", error);
+    }
+  };
+
+  // UPDATE FUNCTION
+  const toggleStatus = async (ticket: Ticket) => {
+    if (!ticket.id) return;
+
+    const newStatus = ticket.status === "RESOLVED" ? "OPEN" : "RESOLVED";
+
+    try {
+      // Sending ticket back with the updated status
+      await axios.put(`http://localhost:8000/api/tickets/${ticket.id}`, {
+        ...ticket,
+        status: newStatus,
+      });
+      fetchTickets();
+    } catch (error) {
+      console.error("Error updating ticket:", error);
     }
   };
 
@@ -157,12 +191,22 @@ function App() {
                 No active tickets found. Submit one to get started!
               </div>
             ) : (
-              tickets.map((ticket) => (
+              // Reverse the array here so the newest tickets appear at the top
+              [...tickets].reverse().map((ticket) => (
                 <div
                   key={ticket.id}
-                  className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-md hover:border-slate-600 transition group"
+                  className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-md hover:border-slate-600 transition group relative"
                 >
-                  <div className="flex justify-between items-start gap-4 mb-3">
+                  {/* Delete Button (Hidden until hover) */}
+                  <button
+                    onClick={() => handleDelete(ticket.id)}
+                    className="absolute top-4 right-4 text-slate-500 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition duration-200"
+                    title="Delete Ticket"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+
+                  <div className="flex justify-between items-start gap-4 mb-3 pr-8">
                     <h3 className="font-semibold text-lg text-slate-100 group-hover:text-indigo-400 transition">
                       {ticket.title}
                     </h3>
@@ -195,11 +239,28 @@ function App() {
                         </strong>
                       </span>
                     </div>
-                    {ticket.id && (
-                      <span className="font-mono text-slate-500">
-                        #{ticket.id}
-                      </span>
-                    )}
+
+                    <div className="flex items-center gap-4">
+                      {/* Update Status Toggle Button */}
+                      <button
+                        onClick={() => toggleStatus(ticket)}
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-md font-medium transition ${
+                          ticket.status === "RESOLVED"
+                            ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                            : "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
+                        }`}
+                      >
+                        {ticket.status === "RESOLVED" ? (
+                          <>
+                            <RefreshCcw size={14} /> Reopen
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle size={14} /> Resolve
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
