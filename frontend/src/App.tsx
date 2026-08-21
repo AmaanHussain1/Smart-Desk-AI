@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import type { Ticket } from "./types/Ticket";
-import { Trash2, CheckCircle, RefreshCcw } from "lucide-react";
+import { Trash2, CheckCircle, RefreshCcw, Bot, Copy } from "lucide-react";
 
 function App() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
+  const [expandedTicketId, setExpandedTicketId] = useState<number | null | undefined>(null);
 
   // Fetch tickets when the app loads
   useEffect(() => {
@@ -69,6 +70,14 @@ function App() {
       fetchTickets();
     } catch (error) {
       console.error("Error updating ticket:", error);
+    }
+  };
+
+  // COPY TO CLIPBOARD
+  const copyToClipboard = (text: string | null | undefined) => {
+    if (text) {
+      navigator.clipboard.writeText(text);
+      alert("AI Reply copied to clipboard!");
     }
   };
 
@@ -191,13 +200,13 @@ function App() {
                 No active tickets found. Submit one to get started!
               </div>
             ) : (
-              // Reverse the array here so the newest tickets appear at the top
+              // Reversed the array so the newest tickets appear at the top
               [...tickets].reverse().map((ticket) => (
                 <div
                   key={ticket.id}
                   className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-md hover:border-slate-600 transition group relative"
                 >
-                  {/* Delete Button (Hidden until hover) */}
+                  {/* Delete Button */}
                   <button
                     onClick={() => handleDelete(ticket.id)}
                     className="absolute top-4 right-4 text-slate-500 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition duration-200"
@@ -223,12 +232,11 @@ function App() {
                     {ticket.description}
                   </p>
 
-                  <div className="pt-4 border-t border-slate-700/50 flex items-center justify-between text-xs text-slate-400">
+                  {/* Ticket Footer Details & Actions */}
+                  <div className="pt-4 border-t border-slate-700/50 flex flex-wrap gap-4 items-center justify-between text-xs text-slate-400">
                     <div className="flex items-center space-x-3">
                       <span
-                        className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${getStatusBadge(
-                          ticket.status,
-                        )}`}
+                        className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${getStatusBadge(ticket.status)}`}
                       >
                         {ticket.status || "OPEN"}
                       </span>
@@ -240,7 +248,26 @@ function App() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      {/* Toggle Agent View Button */}
+                      <button
+                        onClick={() =>
+                          setExpandedTicketId(
+                            expandedTicketId === ticket.id ? null : ticket.id,
+                          )
+                        }
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition ${
+                          expandedTicketId === ticket.id
+                            ? "bg-indigo-500/20 text-indigo-400"
+                            : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                        }`}
+                      >
+                        <Bot size={14} />
+                        {expandedTicketId === ticket.id
+                          ? "Close AI Draft"
+                          : "AI Agent View"}
+                      </button>
+
                       {/* Update Status Toggle Button */}
                       <button
                         onClick={() => toggleStatus(ticket)}
@@ -262,6 +289,36 @@ function App() {
                       </button>
                     </div>
                   </div>
+
+                  {/* Agent View Section */}
+                  {expandedTicketId === ticket.id && (
+                    <div className="mt-4 pt-4 border-t border-slate-700/50 animate-in fade-in duration-200">
+                      <div className="bg-indigo-950/30 border border-indigo-500/20 rounded-xl p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-semibold text-indigo-300 flex items-center gap-2">
+                            <Bot size={16} /> Suggested Agent Reply
+                          </h4>
+                          {ticket.suggestedReply && (
+                            <button
+                              onClick={() =>
+                                copyToClipboard(ticket.suggestedReply)
+                              }
+                              className="text-slate-400 hover:text-indigo-300 transition flex items-center gap-1"
+                            >
+                              <Copy size={14} />{" "}
+                              <span className="text-[10px] uppercase tracking-wider">
+                                Copy
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">
+                          {ticket.suggestedReply ||
+                            "No AI reply generated for this ticket yet."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))
             )}
